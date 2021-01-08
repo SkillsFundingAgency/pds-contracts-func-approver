@@ -1,4 +1,8 @@
 ﻿using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Pds.Contracts.Approver.Func;
 using Pds.Contracts.Approver.Services.DependencyInjection;
 
@@ -15,7 +19,14 @@ namespace Pds.Contracts.Approver.Func
         /// <inheritdoc/>
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            builder.Services.AddFeatureServices();
+            // TODO : Confirm what AddFeatureServices() does
+            // builder.Services.AddFeatureServices();
+
+            builder.Services.AddHttpClient();
+            builder.Services.AddSingleton<IMyService>((s) => {
+                return new MyService();
+            });
+            builder.Services.AddSingleton<ILoggerProvider, MyLoggerProvider>();
         }
     }
 }
