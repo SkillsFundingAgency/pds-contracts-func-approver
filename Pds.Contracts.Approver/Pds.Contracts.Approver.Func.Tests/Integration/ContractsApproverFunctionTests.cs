@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Pds.Contracts.Approver.Services.Implementations;
 using System;
@@ -7,21 +8,18 @@ using System.Threading.Tasks;
 namespace Pds.Contracts.Approver.Func.Tests.Integration
 {
     [TestClass]
-    public class ExampleTimerFunctionTests
+    public class ContractsApproverFunctionTests
     {
         [TestMethod, TestCategory("Integration")]
         public void Run_DoesNotThrowException()
         {
             // Arrange
-            var exampleService = new ExampleService();
+            var loggerFactory = new LoggerFactory();
 
-            var function = new ExampleTimerFunction(exampleService);
+            var function = new ContractsApproverFunction(loggerFactory.CreateLogger<ContractsApproverFunction>());
 
             // Act
-            Func<Task> act = async () => { await function.Run(null, null); };
-
-            // Assert
-            act.Should().NotThrow();
+            function.Run("This is from SB");
         }
     }
 }
