@@ -15,7 +15,6 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
         {
             // Arrange
             var message = "Hello, world!";
-            var expected = $">> Processing message {message}";
 
             var mockLogger = new Mock<ILoggerAdapter<ContractsApproverService>>();
             mockLogger.Setup(p => p.LogInformation(It.IsAny<string>()));
