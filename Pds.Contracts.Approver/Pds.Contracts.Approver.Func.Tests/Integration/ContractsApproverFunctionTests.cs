@@ -1,7 +1,9 @@
 ﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Pds.Contracts.Approver.Services.Implementations;
+using Pds.Contracts.Approver.Services.Interfaces;
 using System;
 using System.Threading.Tasks;
 
@@ -14,12 +16,14 @@ namespace Pds.Contracts.Approver.Func.Tests.Integration
         public void Run_DoesNotThrowException()
         {
             // Arrange
-            var loggerFactory = new LoggerFactory();
-
-            var function = new ContractsApproverFunction(loggerFactory.CreateLogger<ContractsApproverFunction>());
+            var mockService = new Mock<IContractsApproverService>();
+            var function = new ContractsApproverFunction(mockService.Object);
 
             // Act
-            function.Run("This is from SB");
+            Func<Task> act = async () => { await function.Run(null, null); };
+
+            // Assert
+            act.Should().NotThrow();
         }
     }
 }

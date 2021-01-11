@@ -15,15 +15,22 @@ namespace Pds.Contracts.Approver.Func.Tests.Unit
         public void Run_DoesNotThrowException()
         {
             // Arrange
-            var mockLoggerService = new Mock<ILogger<ContractsApproverFunction>>();
+            var mockService = new Mock<IContractsApproverService>(MockBehavior.Strict);
 
-            var function = new ContractsApproverFunction(mockLoggerService.Object);
+            mockService.Setup(p => p.ProcessMessage(null))
+                .Returns(Task.CompletedTask);
+
+            var function = new ContractsApproverFunction(mockService.Object);
 
             // Act
-            function.Run(null);
+            Func<Task> act = async () =>
+            {
+                await function.Run(null, null);
+            };
 
             // Assert
-            mockLoggerService.Verify();
+            act.Should().NotThrow();
+            mockService.Verify();
         }
     }
 }
