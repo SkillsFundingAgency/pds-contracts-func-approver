@@ -26,14 +26,7 @@ namespace Pds.Contracts.Approver.Func
             builder.Services.AddLoggerAdapter();
             builder.Services.AddPdsApplicationInsightsTelemetry(BuildAppInsightsConfiguration);
             builder.Services.AddFeatureServices();
-            FunctionsHostBuilderContext context = builder.GetContext();
-            var config = new ConfigurationBuilder()
-           .AddJsonFile(Path.Combine(context.ApplicationRootPath, $"local.settings.json"), optional: true, reloadOnChange: false)
-           .AddEnvironmentVariables()
-           .Build();
         }
-
-
 
         private void BuildAppInsightsConfiguration(PdsApplicationInsightsConfiguration options)
         {

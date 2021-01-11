@@ -13,7 +13,7 @@ namespace Pds.Contracts.Approver.Func
     /// </summary>
     public class ContractsApproverFunction
     {
-        private readonly IContractsApproverService service;
+        private readonly IContractsApproverService _service;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractsApproverFunction"/> class.
@@ -21,20 +21,20 @@ namespace Pds.Contracts.Approver.Func
         /// <param name="service">Service to be used as the message processor.</param>
         public ContractsApproverFunction(IContractsApproverService service)
         {
-            this.service = service;
+            _service = service;
         }
 
         /// <summary>
-        /// This executed by the service bus subscription trigger.
+        /// Invokes the associated <see cref="IContractsApproverService"/> to process the message.
         /// </summary>
-        /// <param name="mySbMsg"> The message to be processed.</param>
+        /// <param name="message"> The message to be processed.</param>
         /// <param name="log">An <see cref="ILogger"/> for log output.</param>
         /// <returns>An awaitable task.</returns>
         [FunctionName("ContractsApproverFunction")]
-        public async Task Run([ServiceBusTrigger(topicName: "%Pds.Contracts.Notifications.Topic%", subscriptionName: "%Pds.Contracts.Approval.Subscription%", Connection = "sb-connection-string")] string mySbMsg, ILogger log)
+        public async Task Run([ServiceBusTrigger(topicName: "%Pds.Contracts.Notifications.Topic%", subscriptionName: "%Pds.Contracts.Approval.Subscription%", Connection = "sb-connection-string")] string message, ILogger log)
         {
-            log?.LogInformation($"C# ServiceBus topic trigger function processed message: {mySbMsg}");
-            await service.ProcessMessage(mySbMsg);
+            log?.LogInformation($"C# ServiceBus topic trigger function processed message: {message}");
+            await _service.ProcessMessage(message);
         }
     }
 }

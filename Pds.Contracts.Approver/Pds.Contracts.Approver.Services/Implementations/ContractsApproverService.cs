@@ -18,7 +18,7 @@ namespace Pds.Contracts.Approver.Services.Implementations
         /// <param name="logger">ILogger reference to log output.</param>
         public ContractsApproverService(ILoggerAdapter<ContractsApproverService> logger)
         {
-            this._logger = logger;
+            _logger = logger;
         }
 
         /// <summary>

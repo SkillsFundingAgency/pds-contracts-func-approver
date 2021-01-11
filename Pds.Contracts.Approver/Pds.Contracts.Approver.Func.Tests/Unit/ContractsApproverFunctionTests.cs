@@ -11,7 +11,7 @@ namespace Pds.Contracts.Approver.Func.Tests.Unit
     [TestClass]
     public class ContractsApproverFunctionTests
     {
-        [TestMethod, TestCategory("Integration")]
+        [TestMethod, TestCategory("Unit")]
         public void Run_DoesNotThrowException()
         {
             // Arrange
