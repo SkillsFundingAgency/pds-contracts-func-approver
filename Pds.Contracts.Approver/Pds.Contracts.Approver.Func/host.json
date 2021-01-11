@@ -9,7 +9,7 @@
       }
     },
     "logLevel": {
-      "Pds.Contracts.Approver.Func": "Information"
+      "default": "Information"
     }
   }
 }

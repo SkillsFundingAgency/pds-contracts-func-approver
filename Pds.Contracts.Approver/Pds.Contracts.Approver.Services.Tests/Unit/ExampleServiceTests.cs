@@ -14,10 +14,10 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
             // Arrange
             var expected = "Hello, world!";
 
-            var exampleService = new ExampleService();
+            var exampleService = new ContractsApproverService();
 
             // Act
-            var actual = await exampleService.Hello();
+            var actual = await exampleService.ProcessMessage();
 
             // Assert
             actual.Should().Be(expected);
