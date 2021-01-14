@@ -143,6 +143,27 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusNamespaceName": {
+            "value": "[parameters('sharedServiceBusName')]"
+          },
+          "serviceBusTopicName": {
+            "value": "[variables('contractNotificationTopicName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "contract-approver-service-bus-subscription",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('sharedResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
           "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic-subscription.json')]",
           "contentVersion": "1.0.0.0"
         },
@@ -157,7 +178,10 @@
             "value": "[variables('contractApproverSubscriptionName')]"
           }
         }
-      }
+      },
+      "dependsOn": [
+        "contract-approver-service-bus-topic"
+      ]
     },
     {
       "apiVersion": "2017-05-10",
