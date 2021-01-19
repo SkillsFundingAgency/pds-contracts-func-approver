@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using Pds.Contracts.Approver.Services.Models;
+using System.Threading.Tasks;
 
 namespace Pds.Contracts.Approver.Services.Interfaces
 {
@@ -12,6 +13,6 @@ namespace Pds.Contracts.Approver.Services.Interfaces
         /// </summary>
         /// <param name="message">The message to process.</param>
         /// <returns>Returns an async task.</returns>
-        Task ProcessMessage(string message);
+        Task ProcessMessage(ContractApprovedMessage message);
     }
 }

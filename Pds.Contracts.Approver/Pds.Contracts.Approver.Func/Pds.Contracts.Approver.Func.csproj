@@ -31,5 +31,5 @@
     <None Update="local.settings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup> 
+  </ItemGroup>
 </Project>
