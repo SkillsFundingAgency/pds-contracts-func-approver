@@ -176,6 +176,9 @@
           },
           "serviceBusTopicSubscriptionName": {
             "value": "[variables('contractApproverSubscriptionName')]"
+          },
+          "subscriptionSqlFilter": {
+            "value": "Status = 'ApprovedWaitingConfirmation'"
           }
         }
       },
