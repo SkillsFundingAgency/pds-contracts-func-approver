@@ -61,6 +61,24 @@
     "MemoryPercentageAlertThreshhold": {
       "type": "string",
       "defaultValue": "75"
+    },
+    "FcsApiBaseAddress": {
+      "type": "string"
+    },
+    "FcsApiAzureAdAuthority": {
+      "type": "string"
+    },
+    "FcsApiAzureAdTenant": {
+      "type": "string"
+    },
+    "FcsApiAzureAdClientId": {
+      "type": "string"
+    },
+    "FcsApiAzureAdClientSecret": {
+      "type": "securestring"
+    },
+    "FcsApiAzureAdAppUri": {
+      "type": "string"
     }
   },
   "variables": {
@@ -247,6 +265,30 @@
               {
                 "name": "sb-connection-string",
                 "value": "[concat('Endpoint=sb://', parameters('sharedServiceBusName'), '.servicebus.windows.net/;SharedAccessKeyName=', parameters('serviceBusAccessKeyName'), ';SharedAccessKey=',listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString)]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:ApiBaseAddress",
+                "value": "[parameters('FcsApiBaseAddress')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:Authority", 
+                "value": "[parameters('FcsApiAzureAdAuthority')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:TenantId",
+                "value": "[parameters('FcsApiAzureAdTenant')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:ClientId",
+                "value": "[parameters('FcsApiAzureAdClientId')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:ClientSecret",
+                "value": "[parameters('FcsApiAzureAdClientSecret')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:AppUri",
+                "value": "[parameters('FcsApiAzureAdAppUri')]"
               }
             ]
           }
