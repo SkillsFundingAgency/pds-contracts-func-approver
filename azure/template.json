@@ -152,7 +152,7 @@
         "Operator": "GreaterThan",
         "Threshold": "[parameters('ContractApproverTopicActiveMessagesThreshhold')]",
         "TimeWindow": "PT5M",
-        "Aggregation": "Count"
+        "Aggregation": "Average"
       }
     ]
   },
@@ -481,7 +481,7 @@
             "value": [
               {
                 "name": "EntityName",
-                "operator": "=",
+                "operator": "Include",
                 "values": [
                   "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].TopicName]"
                 ]
@@ -495,7 +495,7 @@
             "value": "[parameters('sharedResourceGroupName')]"
           },
           "resourceId": {
-            "value": "[resourceId('Microsoft.ServiceBus/namespaces', parameters('sharedServiceBusName'))]"
+            "value": "[resourceId(parameters('sharedResourceGroupName'), 'Microsoft.ServiceBus/namespaces', parameters('sharedServiceBusName'))]"
           }
         }
       },
