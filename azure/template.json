@@ -495,7 +495,7 @@
             "value": "[parameters('sharedResourceGroupName')]"
           },
           "resourceId": {
-            "value": "[resourceId('Microsoft.ServiceBus/namespaces', parameters('sharedServiceBusName'))]"
+            "value": "[resourceId('Microsoft.ServiceBus/namespaces', parameters('sharedResourceGroupName'), parameters('sharedServiceBusName'))]"
           }
         }
       },
