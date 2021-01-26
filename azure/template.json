@@ -481,7 +481,7 @@
             "value": [
               {
                 "name": "EntityName",
-                "operator": "=",
+                "operator": "Include",
                 "values": [
                   "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].TopicName]"
                 ]
