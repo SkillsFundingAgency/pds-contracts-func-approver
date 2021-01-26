@@ -54,6 +54,10 @@
       "type": "string",
       "defaultValue": ""
     },
+    "ContractsActionGroupName": {
+      "type": "string",
+      "defaultValue": ""
+    },
     "CPUPercentageAlertThreshhold": {
       "type": "string",
       "defaultValue": "75"
@@ -61,6 +65,14 @@
     "MemoryPercentageAlertThreshhold": {
       "type": "string",
       "defaultValue": "75"
+    },
+    "ContractApproverTopicDeadletterThreshhold": {
+      "type": "string",
+      "defaultValue": "0"
+    },
+    "ContractApproverTopicActiveMessagesThreshhold": {
+      "type": "string",
+      "defaultValue": "1000"
     },
     "FcsApiBaseAddress": {
       "type": "string"
@@ -123,6 +135,24 @@
         "Threshold": "[parameters('MemoryPercentageAlertThreshhold')]",
         "TimeWindow": "PT5M",
         "Aggregation": "Average"
+      }
+    ],
+    "ServiceBusTopicMetricsToAlertUpon": [
+      {
+        "MetricName": "DeadletteredMessages",
+        "TopicName": "[variables('contractNotificationTopicName')]",
+        "Operator": "GreaterThan",
+        "Threshold": "[parameters('ContractApproverTopicDeadletterThreshhold')]",
+        "TimeWindow": "PT5M",
+        "Aggregation": "Average"
+      },
+      {
+        "MetricName": "ActiveMessages",
+        "TopicName": "[variables('contractNotificationTopicName')]",
+        "Operator": "GreaterThan",
+        "Threshold": "[parameters('ContractApproverTopicActiveMessagesThreshhold')]",
+        "TimeWindow": "PT5M",
+        "Aggregation": "Count"
       }
     ]
   },
@@ -407,6 +437,74 @@
       },
       "dependsOn": [
         "function-app"
+      ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "[concat(parameters('sharedServiceBusName'), '-metric-', tolower(variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].MetricName))]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'), 'alert-rules.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "enabled": {
+            "value": "[variables('EnableAlertsAndMetrics')]"
+          },
+          "alertName": {
+            "value": "[concat(variables('functionAppName'), '-metric-', tolower(variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].MetricName))]"
+          },
+          "alertSeverity": {
+            "value": 3
+          },
+          "metricName": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].MetricName]"
+          },
+          "operator": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].Operator]"
+          },
+          "threshold": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].Threshold]"
+          },
+          "aggregation": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].Aggregation]"
+          },
+          "windowSize": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].TimeWindow]"
+          },
+          "evaluationFrequency": {
+            "value": "PT1M"
+          },
+          "dimensions": {
+            "value": [
+              {
+                "name": "EntityName",
+                "operator": "=",
+                "values": [
+                  "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].TopicName]"
+                ]
+              }
+            ]
+          },
+          "actionGroupName": {
+            "value": "[parameters('ContractsActionGroupName')]"
+          },
+          "actionGroupResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "resourceId": {
+            "value": "[resourceId('Microsoft.ServiceBus/namespaces', parameters('sharedServiceBusName'))]"
+          }
+        }
+      },
+      "copy": {
+        "name": "ServiceBusMetricCopy",
+        "count": "[length(variables('ServiceBusTopicMetricsToAlertUpon'))]"
+      },
+      "dependsOn": [
+        "contract-approver-service-bus-topic"
       ]
     }
   ],
