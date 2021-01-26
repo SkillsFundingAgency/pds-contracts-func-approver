@@ -152,7 +152,7 @@
         "Operator": "GreaterThan",
         "Threshold": "[parameters('ContractApproverTopicActiveMessagesThreshhold')]",
         "TimeWindow": "PT5M",
-        "Aggregation": "Count"
+        "Aggregation": "Average"
       }
     ]
   },
