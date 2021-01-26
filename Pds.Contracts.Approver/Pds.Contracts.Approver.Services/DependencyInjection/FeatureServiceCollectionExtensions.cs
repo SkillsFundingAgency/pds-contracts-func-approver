@@ -25,7 +25,7 @@ namespace Pds.Contracts.Approver.Services.DependencyInjection
                 {
                     configuration.GetSection(nameof(FcsApiClientConfiguration)).Bind(settings);
                 });
-            services.AddSingleton<IContractsApproverService, ContractsApproverService>();
+            services.AddHttpClient<IContractsApproverService, ContractsApproverService>();
 
             services.AddTransient(typeof(IAuthenticationService<>), typeof(AuthenticationService<>));
 

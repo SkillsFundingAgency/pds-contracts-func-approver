@@ -14,8 +14,6 @@ namespace Pds.Contracts.Approver.Services.Models
     /// </summary>
     public class ContractApprovedMessage
     {
-        private ExtensionDataObject _serializationData;
-
         /// <summary>
         /// Gets or sets the number identifying the contract.
         /// </summary>
