@@ -251,6 +251,15 @@
           "appServicePlanResourceGroup": {
             "value": "[resourceGroup().name]"
           },
+          "functionAppConnectionStrings": {
+            "value": [
+              {
+                "name": "sb-connection-string",
+                "connectionString": "[listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString]",
+                "type": "Custom"
+              }
+            ]
+          },
           "functionAppAppSettings": {
             "value": [
               {
@@ -288,10 +297,6 @@
               {
                 "name": "Pds.Contracts.Approval.Subscription",
                 "value": "[variables('contractApproverSubscriptionName')]"
-              },
-              {
-                "name": "sb-connection-string",
-                "value": "[concat('Endpoint=sb://', parameters('sharedServiceBusName'), '.servicebus.windows.net/;SharedAccessKeyName=', parameters('serviceBusAccessKeyName'), ';SharedAccessKey=',listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString)]"
               },
               {
                 "name": "FcsApiClientConfiguration:ApiBaseAddress",
