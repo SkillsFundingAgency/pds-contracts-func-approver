@@ -54,10 +54,6 @@
       "type": "string",
       "defaultValue": ""
     },
-    "ContractsActionGroupName": {
-      "type": "string",
-      "defaultValue": ""
-    },
     "CPUPercentageAlertThreshhold": {
       "type": "string",
       "defaultValue": "75"
@@ -494,7 +490,7 @@
             ]
           },
           "actionGroupName": {
-            "value": "[parameters('ContractsActionGroupName')]"
+            "value": "[parameters('ActionGroupName')]"
           },
           "actionGroupResourceGroup": {
             "value": "[parameters('sharedResourceGroupName')]"
