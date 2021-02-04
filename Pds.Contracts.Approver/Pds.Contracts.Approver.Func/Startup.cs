@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pds.Contracts.Approver.Func;
+using Pds.Contracts.Approver.Services.Configuration;
 using Pds.Contracts.Approver.Services.DependencyInjection;
 using Pds.Core.Logging;
 using Pds.Core.Telemetry.ApplicationInsights;
@@ -23,9 +24,15 @@ namespace Pds.Contracts.Approver.Func
         /// <inheritdoc/>
         public override void Configure(IFunctionsHostBuilder builder)
         {
+            var configuration = new ConfigurationBuilder()
+                  .SetBasePath(Directory.GetCurrentDirectory())
+                  .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+                  .AddEnvironmentVariables()
+                  .Build();
+
             builder.Services.AddLoggerAdapter();
             builder.Services.AddPdsApplicationInsightsTelemetry(BuildAppInsightsConfiguration);
-            builder.Services.AddFeatureServices();
+            builder.Services.AddFeatureServices(configuration);
         }
 
         private void BuildAppInsightsConfiguration(PdsApplicationInsightsConfiguration options)

@@ -2,20 +2,16 @@ using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Moq.Protected;
-using Newtonsoft.Json;
 using Pds.Contracts.Approver.Services.Configuration;
 using Pds.Contracts.Approver.Services.Implementations;
+using Pds.Contracts.Approver.Services.Interfaces;
 using Pds.Contracts.Approver.Services.Models;
-using Pds.Core.ApiClient;
 using Pds.Core.ApiClient.Exceptions;
 using Pds.Core.ApiClient.Interfaces;
 using Pds.Core.Logging;
+using RichardSzalay.MockHttp;
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pds.Contracts.Approver.Services.Tests.Unit
@@ -26,53 +22,117 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
         private const string TestBaseAddress = "http://test-api-endpoint";
 
         private const string TestFakeAccessToken = "AccessToken";
-        private const string TestFakeExceptionMessage = "Test Error";
-
-        private readonly HttpMessageHandler _httpMessageHandler = Mock.Of<HttpMessageHandler>(MockBehavior.Strict);
 
         [TestMethod]
         public void ContractPost_ReturnsExpectedResult()
         {
             // Arrange
             var message = GetContractApprovedMessage();
-            var httpClient = GetHttpClient();
 
-            SetupMessageHandler(HttpStatusCode.OK);
+            _mockHttpMessageHandler
+                .Expect(TestBaseAddress + "/api/contract/approve")
+                .Respond(HttpStatusCode.OK);
 
-            var fcsConfiguration = Options.Create(GetServicesConfiguration());
+            Mock.Get(_auditApi)
+                   .Setup(p => p.CreateAuditAsync(It.IsAny<Audit>()))
+                   .Returns(Task.CompletedTask);
 
-            var mockAuthentication = GetMockAuthenticationService<FcsApiClientConfiguration>();
-            var mockLogger = new Mock<ILoggerAdapter<ContractsApproverService>>(MockBehavior.Strict);
-            mockLogger.Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
+            Mock.Get(_contractsApproverLogger)
+                .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()))
+                .Verifiable();
 
-            var contractService = new ContractsApproverService(mockAuthentication.Object, httpClient, fcsConfiguration, mockLogger.Object);
+            var contractService = CreateContractsApproverService();
 
             // Act
             Func<Task> act = async () => await contractService.ProcessMessage(message);
 
             // Assert
-            act.Should().NotThrowAsync();
-            mockLogger.Verify(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()), Times.AtLeastOnce());
-            VerifyMessageHandlerWhenUsingAADAuth(HttpMethod.Post, TestBaseAddress + "/api/contract/approve");
+            act.Should().NotThrow();
+            VerifyAllMocks();
         }
 
         [TestMethod]
-        public void ContractPost_OnError_LogsError()
+        public void ProcessMessage_OnSuccess_LogsToLoggerAndAudit()
         {
             // Arrange
             var message = GetContractApprovedMessage();
-            var httpClient = GetHttpClient();
+            int expectedAuditActionType = AuditService.AuditActionType_ContractApprovedMessageSentToFCS;
+            int actualAuditActionType = -1; // Init to invalid value - Will be overriden in mock
 
-            SetupMessageHandlerException(TestFakeExceptionMessage);
+            _mockHttpMessageHandler
+                .Expect(TestBaseAddress + "/api/contract/approve")
+                .Respond(HttpStatusCode.OK);
 
-            var fcsConfiguration = Options.Create(GetServicesConfiguration());
+            Mock.Get(_auditApi)
+                .Setup(p => p.CreateAuditAsync(It.IsAny<Audit>()))
+                .Returns((Audit audit) =>
+                    {
+                        actualAuditActionType = audit.Action;
+                        return Task.CompletedTask;
+                    })
+                .Verifiable();
 
-            var mockAuthentication = GetMockAuthenticationService<FcsApiClientConfiguration>();
-            var mockLogger = new Mock<ILoggerAdapter<ContractsApproverService>>(MockBehavior.Strict);
-            mockLogger.Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
-            mockLogger.Setup(p => p.LogError(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<object[]>()));
+            Mock.Get(_contractsApproverLogger)
+                .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()))
+                .Verifiable();
 
-            var contractService = new ContractsApproverService(mockAuthentication.Object, httpClient, fcsConfiguration, mockLogger.Object);
+            var contractService = CreateContractsApproverService();
+
+            // Act
+            Func<Task> act = async () => await contractService.ProcessMessage(message);
+
+            // Assert
+            act.Should().NotThrow();
+            actualAuditActionType.Should().Be(expectedAuditActionType);
+            VerifyAllMocks();
+        }
+
+        [TestMethod]
+        public void ProcessMessage_OnAuditAPIFailure_LogsErrorAndContinues()
+        {
+            // Arrange
+            var message = GetContractApprovedMessage();
+            _mockHttpMessageHandler
+                .Expect(TestBaseAddress + "/api/contract/approve")
+                .Respond(HttpStatusCode.OK);
+
+            Mock.Get(_auditApi)
+                .Setup(p => p.CreateAuditAsync(It.IsAny<Audit>()))
+                .Returns((Audit audit) => throw new Exception())
+                .Verifiable();
+
+            Mock.Get(_contractsApproverLogger)
+                .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()))
+                .Verifiable();
+            Mock.Get(_contractsApproverLogger)
+                .Setup(p => p.LogError(It.IsAny<Exception>(), It.IsAny<string>()))
+                .Verifiable();
+
+            var contractService = CreateContractsApproverService();
+
+            // Act
+            Func<Task> act = async () => await contractService.ProcessMessage(message);
+
+            // Assert
+            act.Should().NotThrow();
+            VerifyAllMocks();
+        }
+
+        [TestMethod]
+        public void ContractPost_OnErrorWhenSendingToFCS_LogsError()
+        {
+            // Arrange
+            var message = GetContractApprovedMessage();
+            _mockHttpMessageHandler
+                .Expect(TestBaseAddress + "/api/contract/approve")
+                .Respond(HttpStatusCode.ServiceUnavailable, "text/html", "Service Not Available");
+
+            Mock.Get(_contractsApproverLogger)
+                .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
+            Mock.Get(_contractsApproverLogger)
+                .Setup(p => p.LogError(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<object[]>()));
+
+            var contractService = CreateContractsApproverService();
 
             // Act
             Func<Task> act = async () => await contractService.ProcessMessage(message);
@@ -80,129 +140,66 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
             // Assert
             var exceptionAssertions = act.Should()
                 .Throw<ApiGeneralException>()
-                .WithMessage("Request failed with unknown status code*");
+                .And.ResponseStatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
 
-            exceptionAssertions
-                .WithInnerException<Exception>()
-                    .WithMessage(TestFakeExceptionMessage);
-
-            exceptionAssertions
-                .Which.ResponseStatusCode.Should().BeNull();
-            mockLogger.Verify(p => p.LogError(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<object[]>()));
-            VerifyMessageHandlerWhenUsingAADAuth(HttpMethod.Post, TestBaseAddress + "/api/contract/approve");
+            VerifyAllMocks();
         }
 
         #region Setup Helpers
 
         private static ContractApprovedMessage GetContractApprovedMessage()
         {
-            // Arrange
-            return new ContractApprovedMessage() { ContractNumber = "123", MasterContractNumber = "12", ContractVersionNumber = 1 };
+            return new ContractApprovedMessage()
+            {
+                ContractNumber = "123",
+                MasterContractNumber = "12",
+                ContractVersionNumber = 1
+            };
         }
 
-        private HttpClient GetHttpClient()
-            => new HttpClient(_httpMessageHandler);
+        private readonly MockHttpMessageHandler _mockHttpMessageHandler
+            = new MockHttpMessageHandler();
+
+        private readonly IAuditService _auditApi
+            = Mock.Of<IAuditService>(MockBehavior.Strict);
+
+        private readonly ILoggerAdapter<ContractsApproverService> _contractsApproverLogger
+            = Mock.Of<ILoggerAdapter<ContractsApproverService>>(MockBehavior.Strict);
+
+        private ContractsApproverService CreateContractsApproverService()
+        {
+            var httpClient = _mockHttpMessageHandler.ToHttpClient();
+
+            var authenticationService = GetAuthenticationService();
+            var fcsConfiguration = Options.Create(GetServicesConfiguration());
+
+            return new ContractsApproverService(authenticationService, httpClient, fcsConfiguration, _auditApi, _contractsApproverLogger);
+        }
+
+        private IAuthenticationService<FcsApiClientConfiguration> GetAuthenticationService()
+        {
+            var mockAuthenticationService = new Mock<IAuthenticationService<FcsApiClientConfiguration>>(MockBehavior.Strict);
+            mockAuthenticationService
+                .Setup(x => x.GetAccessTokenForAAD())
+                .Returns(Task.FromResult(TestFakeAccessToken));
+            return mockAuthenticationService.Object;
+        }
 
         private FcsApiClientConfiguration GetServicesConfiguration()
-            => new FcsApiClientConfiguration
+            => new FcsApiClientConfiguration()
             {
                 ApiBaseAddress = TestBaseAddress
             };
-
-        private Mock<IAuthenticationService<T>> GetMockAuthenticationService<T>()
-            where T : BaseApiClientConfiguration
-        {
-            var mockAuthenticationService = new Mock<IAuthenticationService<T>>(MockBehavior.Strict);
-            mockAuthenticationService.Setup(x => x.GetAccessTokenForAAD()).Returns(
-                Task.FromResult(TestFakeAccessToken));
-            return mockAuthenticationService;
-        }
-
-        private void SetupMessageHandler(HttpStatusCode statusCode, TestResponseClass responseObject = null)
-        {
-            var expectedResponse = new HttpResponseMessage
-            {
-                StatusCode = statusCode
-            };
-
-            if (responseObject != null)
-            {
-                var responseContent = JsonConvert.SerializeObject(responseObject);
-                expectedResponse.Content = new StringContent(responseContent);
-            }
-
-            Mock.Get(_httpMessageHandler)
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(expectedResponse);
-        }
-
-        private void SetupMessageHandlerException(string message)
-        {
-            Mock.Get(_httpMessageHandler)
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ThrowsAsync(new Exception(message));
-        }
-
         #endregion
-
 
         #region Verify Helpers
 
-        private void VerifyMessageHandlerWhenUsingAADAuth(HttpMethod httpMethod, string expectedUri)
+        private void VerifyAllMocks()
         {
-            Mock.Get(_httpMessageHandler)
-                .Protected()
-                .Verify(
-                    "SendAsync",
-                    Times.Once(), // we expected a single external request
-                    ItExpr.Is<HttpRequestMessage>(
-                        req => req.Method.Equals(httpMethod)
-                               && req.RequestUri.Equals(new Uri(expectedUri))
-                               && req.Headers.Authorization.Parameter.Equals(TestFakeAccessToken)
-                               && req.Headers.Authorization.Scheme.Equals("Bearer")),
-                    ItExpr.IsAny<CancellationToken>());
+            _mockHttpMessageHandler.VerifyNoOutstandingExpectation();
+            Mock.Get(_auditApi).Verify();
+            Mock.Get(_contractsApproverLogger).Verify();
         }
-
-        #endregion
-
-
-        #region Test Response
-
-        private class TestResponseClass : IEquatable<TestResponseClass>
-        {
-            /// <summary>
-            /// Gets or sets int representing the response code.
-            /// </summary>
-            public int TestInt { get; set; }
-
-            /// <summary>
-            /// Gets or sets string representing the response message.
-            /// </summary>
-            public string TestString { get; set; }
-
-            /// <inheritdoc/>
-            public bool Equals([AllowNull] TestResponseClass other)
-            {
-                return other != null &&
-                       TestInt == other.TestInt &&
-                       TestString == other.TestString;
-            }
-
-            /// <inheritdoc/>
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(TestInt, TestString);
-            }
-        }
-
         #endregion
     }
 }

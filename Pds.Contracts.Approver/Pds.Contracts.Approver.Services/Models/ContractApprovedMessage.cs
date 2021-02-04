@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Xml;
-using System.Xml.Serialization;
-
-namespace Pds.Contracts.Approver.Services.Models
+﻿namespace Pds.Contracts.Approver.Services.Models
 {
     /// <summary>
     /// Details of the contract that was approved.
