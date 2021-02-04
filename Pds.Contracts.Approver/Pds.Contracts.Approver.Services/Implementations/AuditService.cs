@@ -54,7 +54,7 @@ namespace Pds.Contracts.Approver.Services.Implementations
         {
             _logger.LogInformation($"Creating an audit entry for action [{audit.Action}] : {audit.Message}");
 
-            await Post("/api/auditasync", audit);
+            await PostWithAADAuth("/api/auditasync", audit);
         }
 
         /// <inheritdoc/>
