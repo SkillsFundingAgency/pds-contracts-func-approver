@@ -93,7 +93,8 @@
     "contractNotificationTopicName": "[concat('contract-notification-topic-', parameters('resourceEnvironmentName'))]",
     "contractApproverSubscriptionName": "[concat('contract-approver-subscription-', parameters('resourceEnvironmentName'))]",
     "appServicePlanName": "[concat(variables('resourceNamePrefix'), 'wkr-asp')]",
-    "EnableAlertsAndMetrics": "[equals(parameters('resourceEnvironmentName'), 'release')]",
+    "EnvironmentToEnableAlertsUpon": ["demo", "oat", "release"],
+    "EnableAlertsAndMetrics": "[contains(variables('EnvironmentToEnableAlertsUpon'), toLower(parameters('resourceEnvironmentName')))]",
     "AppServiceMetricsToAlertUpon": [
       {
         "MetricName": "Http5xx",
