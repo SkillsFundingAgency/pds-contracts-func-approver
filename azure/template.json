@@ -84,6 +84,21 @@
     },
     "FcsApiAzureAdAppUri": {
       "type": "string"
+    },
+    "AuditApiBaseAddress": {
+      "type": "string"
+    },
+    "AuditApiAzureAdTenant": {
+      "type": "string"
+    },
+    "AuditApiAzureAdClientId": {
+      "type": "string"
+    },
+    "AuditApiAzureAdClientSecret": {
+      "type": "securestring"
+    },
+    "AuditApiAzureAdAppUri": {
+      "type": "string"
     }
   },
   "variables": {
@@ -318,6 +333,30 @@
               {
                 "name": "FcsApiClientConfiguration:AppUri",
                 "value": "[parameters('FcsApiAzureAdAppUri')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ApiBaseAddress",
+                "value": "[parameters('AuditApiBaseAddress')]"
+              },
+              {
+                "name": "AuditApiConfiguration:Authority",
+                "value": "https://login.microsoftonline.com/"
+              },
+              {
+                "name": "AuditApiConfiguration:TenantId",
+                "value": "[parameters('AuditApiAzureAdTenant')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ClientId",
+                "value": "[parameters('AuditApiAzureAdClientId')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ClientSecret",
+                "value": "[parameters('AuditApiAzureAdClientSecret')]"
+              },
+              {
+                "name": "AuditApiConfiguration:AppUri",
+                "value": "[parameters('AuditApiAzureAdAppUri')]"
               }
             ]
           }
