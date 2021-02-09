@@ -38,18 +38,6 @@
     "sharedStorageAccountName": {
       "type": "string"
     },
-    "AverageResponseTimeAlertThreshhold": {
-      "type": "string",
-      "defaultValue": "2"
-    },
-    "HttpServerErrorAlertThreshhold": {
-      "type": "string",
-      "defaultValue": "50"
-    },
-    "RequestCountAlertThreshhold": {
-      "type": "string",
-      "defaultValue": "1000"
-    },
     "ActionGroupName": {
       "type": "string",
       "defaultValue": ""
@@ -71,6 +59,9 @@
       "defaultValue": "1000"
     },
     "FcsApiBaseAddress": {
+      "type": "string"
+    },
+    "FcsApiContractApprovalEndpoint": {
       "type": "string"
     },
     "FcsApiAzureAdTenant": {
@@ -99,6 +90,22 @@
     },
     "AuditApiAzureAdAppUri": {
       "type": "string"
+    },
+    "HttpOptionsRetryCount": {
+      "type": "string",
+      "defaultValue": "3"
+    },
+    "HttpOptionsBackOffPower": {
+      "type": "string",
+      "defaultValue": "2"
+    },
+    "HttpOptionsCircuitBreakerToleranceCount": {
+      "type": "string",
+      "defaultValue": "2"
+    },
+    "HttpOptionsCircuitBreakerDuration": {
+      "type": "string",
+      "defaultValue": "0.00:00:15"
     }
   },
   "variables": {
@@ -316,6 +323,10 @@
                 "value": "[parameters('AuditApiBaseAddress')]"
               },
               {
+                "name": "FcsApiClientConfiguration:ApiContractApproverEndpoint",
+                "value": "[parameters('FcsApiContractApprovalEndpoint')]"
+              },
+              {
                 "name": "AuditApiConfiguration:Authority",
                 "value": "https://login.microsoftonline.com/"
               },
@@ -334,6 +345,22 @@
               {
                 "name": "AuditApiConfiguration:AppUri",
                 "value": "[parameters('AuditApiAzureAdAppUri')]"
+              },
+              {
+                "name": "HttpPolicyOptions:HttpRetryCount",
+                "value": "[parameters('HttpOptionsRetryCount')]"
+              },
+              {
+                "name": "HttpPolicyOptions:HttpRetryBackoffPower",
+                "value": "[parameters('HttpOptionsBackOffPower')]"
+              },
+              {
+                "name": "HttpPolicyOptions:CircuitBreakerToleranceCount",
+                "value": "[parameters('HttpOptionsCircuitBreakerToleranceCount')]"
+              },
+              {
+                "name": "HttpPolicyOptions:CircuitBreakerDurationOfBreak",
+                "value": "[parameters('HttpOptionsCircuitBreakerDuration')]"
               }
             ]
           }
