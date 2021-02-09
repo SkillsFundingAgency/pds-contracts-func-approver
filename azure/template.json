@@ -470,7 +470,7 @@
     },
     {
       "apiVersion": "2017-05-10",
-      "name": "[concat(variables('functionAppName'), '-failed-contracts-approver-execution')]",
+      "name": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-approver-failed-contracts-approver-func')]",
       "type": "Microsoft.Resources/deployments",
       "properties": {
         "mode": "Incremental",
@@ -483,7 +483,7 @@
             "value": "[variables('EnableAlertsAndMetrics')]"
           },
           "alertName": {
-            "value": "[concat(variables('functionAppName'), '-failed-contracts-approver-execution')]"
+            "value": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-approver-failed-contracts-approver-func')]"
           },
           "query": {
             "value": "requests | where name==\"ContractsApproverFunction\" | where success == false"
