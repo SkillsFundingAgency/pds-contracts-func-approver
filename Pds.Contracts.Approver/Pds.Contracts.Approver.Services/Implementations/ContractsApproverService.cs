@@ -21,16 +21,13 @@ namespace Pds.Contracts.Approver.Services.Implementations
     /// </summary>
     public class ContractsApproverService : BaseApiClient<FcsApiClientConfiguration>, IContractsApproverService
     {
-        /// <summary>
-        /// Endpoint for contracts approval.
-        /// </summary>
-        public const string ContractApproveEndpoint = "/api/contract/approve";
-
         private const string ContractApproverUser = "System-ContractApprover";
 
         private readonly ILoggerAdapter<ContractsApproverService> _logger;
 
         private readonly IAuditService _audit;
+
+        private readonly FcsApiClientConfiguration _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractsApproverService"/> class.
@@ -50,6 +47,7 @@ namespace Pds.Contracts.Approver.Services.Implementations
         {
             _logger = logger;
             _audit = audit;
+            _configuration = configurationOptions.Value;
         }
 
         /// <inheritdoc/>
@@ -62,7 +60,7 @@ namespace Pds.Contracts.Approver.Services.Implementations
 
             _logger.LogInformation($"Sending approved contract notification for {message.ContractNumber}.");
 
-            await PostWithAADAuth(ContractApproveEndpoint, message);
+            await PostWithAADAuth(_configuration.ApiContractApproverEndpoint, message);
 
             try
             {

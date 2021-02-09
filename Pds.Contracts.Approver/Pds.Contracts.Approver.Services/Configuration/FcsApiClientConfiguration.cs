@@ -10,5 +10,9 @@ namespace Pds.Contracts.Approver.Services.Configuration
     /// </summary>
     public class FcsApiClientConfiguration : BaseApiClientConfiguration
     {
+        /// <summary>
+        /// Gets or sets the api contract approver endpoint.
+        /// </summary>
+        public string ApiContractApproverEndpoint { get; set; }
     }
 }

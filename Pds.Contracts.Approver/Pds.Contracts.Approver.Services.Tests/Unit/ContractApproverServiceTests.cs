@@ -20,7 +20,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
     public class ContractApproverServiceTests
     {
         private const string TestBaseAddress = "http://test-api-endpoint";
-
+        private const string TestApiEndpoint = "/testapi/contract/approve";
         private const string TestFakeAccessToken = "AccessToken";
 
         [TestMethod]
@@ -30,7 +30,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
             var message = GetContractApprovedMessage();
 
             _mockHttpMessageHandler
-                .Expect(TestBaseAddress + "/api/contract/approve")
+                .Expect(TestBaseAddress + TestApiEndpoint)
                 .Respond(HttpStatusCode.OK);
 
             Mock.Get(_auditApi)
@@ -60,7 +60,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
             int actualAuditActionType = -1; // Init to invalid value - Will be overriden in mock
 
             _mockHttpMessageHandler
-                .Expect(TestBaseAddress + "/api/contract/approve")
+                .Expect(TestBaseAddress + TestApiEndpoint)
                 .Respond(HttpStatusCode.OK);
 
             Mock.Get(_auditApi)
@@ -93,7 +93,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
             // Arrange
             var message = GetContractApprovedMessage();
             _mockHttpMessageHandler
-                .Expect(TestBaseAddress + "/api/contract/approve")
+                .Expect(TestBaseAddress + TestApiEndpoint)
                 .Respond(HttpStatusCode.OK);
 
             Mock.Get(_auditApi)
@@ -124,7 +124,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
             // Arrange
             var message = GetContractApprovedMessage();
             _mockHttpMessageHandler
-                .Expect(TestBaseAddress + "/api/contract/approve")
+                .Expect(TestBaseAddress + TestApiEndpoint)
                 .Respond(HttpStatusCode.ServiceUnavailable, "text/html", "Service Not Available");
 
             Mock.Get(_contractsApproverLogger)
@@ -188,7 +188,8 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
         private FcsApiClientConfiguration GetServicesConfiguration()
             => new FcsApiClientConfiguration()
             {
-                ApiBaseAddress = TestBaseAddress
+                ApiBaseAddress = TestBaseAddress,
+                ApiContractApproverEndpoint = TestApiEndpoint
             };
         #endregion
 
