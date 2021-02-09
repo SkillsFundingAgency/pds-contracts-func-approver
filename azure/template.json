@@ -101,7 +101,7 @@
     },
     "HttpOptionsCircuitBreakerToleranceCount": {
       "type": "string",
-      "defaultValue": "2"
+      "defaultValue": "5"
     },
     "HttpOptionsCircuitBreakerDuration": {
       "type": "string",
