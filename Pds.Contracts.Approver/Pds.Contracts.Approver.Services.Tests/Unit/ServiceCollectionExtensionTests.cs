@@ -40,7 +40,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
 
 
             // Act
-            dummyServiceCollection.AddPolicies<ServiceCollectionExtensionTests>(mockConfig, mockRegistry);
+            dummyServiceCollection.AddPollyPolicies<ServiceCollectionExtensionTests>(mockConfig, mockRegistry);
 
             // Assert
             Mock.Verify(Mock.Get(mockConfig), Mock.Get(mockRegistry));

@@ -19,5 +19,10 @@
         /// Gets or sets the number identifying the parent of this contract.
         /// </summary>
         public string MasterContractNumber { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ukprn of the contract.
+        /// </summary>
+        public int Ukprn { get; set; }
     }
 }

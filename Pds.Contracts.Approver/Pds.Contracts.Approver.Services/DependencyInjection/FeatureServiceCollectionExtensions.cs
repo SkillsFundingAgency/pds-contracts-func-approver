@@ -1,11 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Pds.Audit.Api.Client.Registrations;
 using Pds.Contracts.Approver.Services.Configuration;
 using Pds.Contracts.Approver.Services.HttpPolicyConfiguration;
 using Pds.Contracts.Approver.Services.Implementations;
 using Pds.Contracts.Approver.Services.Interfaces;
 using Pds.Core.ApiClient.Interfaces;
 using Pds.Core.ApiClient.Services;
+using System.Collections.Generic;
 
 namespace Pds.Contracts.Approver.Services.DependencyInjection
 {
@@ -23,19 +25,16 @@ namespace Pds.Contracts.Approver.Services.DependencyInjection
         public static IServiceCollection AddFeatureServices(this IServiceCollection services, IConfiguration config)
         {
             var policyRegistry = services.AddPolicyRegistry();
-            var policies = new PolicyType[] { PolicyType.Retry, PolicyType.CircuitBreaker };
-
-            // Configure Polly Policies for IAuditService HttpClient
-            services
-                .AddPolicies<IAuditService>(config, policyRegistry)
-                .AddHttpClient<IAuditService, AuditService, AuditApiConfiguration>(config, policies);
+            var policies = new List<PolicyType>() { PolicyType.Retry, PolicyType.CircuitBreaker };
 
             // Configure Polly Policies for IContractsApproverService HttpClient
             services
-                .AddPolicies<IContractsApproverService>(config, policyRegistry)
+                .AddPollyPolicies<IContractsApproverService>(config, policyRegistry)
                 .AddHttpClient<IContractsApproverService, ContractsApproverService, FcsApiClientConfiguration>(config, policies);
 
             services.AddTransient(typeof(IAuthenticationService<>), typeof(AuthenticationService<>));
+
+            services.AddAuditApiClient(config, policyRegistry);
 
             return services;
         }

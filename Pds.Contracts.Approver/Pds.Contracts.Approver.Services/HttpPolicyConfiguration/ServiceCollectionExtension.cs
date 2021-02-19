@@ -22,7 +22,7 @@ namespace Pds.Contracts.Approver.Services.HttpPolicyConfiguration
         /// <param name="config">The <see cref="IConfiguration"/> that defines Polly policy settings.</param>
         /// <param name="policyRegistry">The <see cref="IPolicyRegistry{TKey}"/> to add the new policies to.</param>
         /// <returns>A reference to this instance after the operation has completed.</returns>
-        public static IServiceCollection AddPolicies<TService>(
+        public static IServiceCollection AddPollyPolicies<TService>(
             this IServiceCollection services,
             IConfiguration config,
             IPolicyRegistry<string> policyRegistry)
