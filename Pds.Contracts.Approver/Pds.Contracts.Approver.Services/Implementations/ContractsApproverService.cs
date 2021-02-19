@@ -63,7 +63,7 @@ namespace Pds.Contracts.Approver.Services.Implementations
 
             _logger.LogInformation($"Sending approved contract notification for {message.ContractNumber}.");
 
-            await PostWithAADAuth(_configuration.ApiContractApproverEndpoint, message);
+            await Post(_configuration.ApiContractApproverEndpoint, message);
 
             try
             {
