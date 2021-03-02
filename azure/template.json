@@ -14,9 +14,6 @@
         "description": "Short name of the service. Used for the name of resources created."
       }
     },
-    "ASPNETCORE_ENVIRONMENT": {
-      "type": "string"
-    },
     "aspSize": {
       "type": "string",
       "defaultValue": "1"
@@ -30,13 +27,130 @@
     },
     "sharedAppInsightsName": {
       "type": "string"
+    },
+    "sharedServiceBusName": {
+      "type": "string"
+    },
+    "servicebusAccessKeyName": {
+      "type": "string",
+      "defaultValue": "RootManagedAccessKey"
+    },
+    "sharedStorageAccountName": {
+      "type": "string"
+    },
+    "ActionGroupName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "CPUPercentageAlertThreshhold": {
+      "type": "string",
+      "defaultValue": "75"
+    },
+    "MemoryPercentageAlertThreshhold": {
+      "type": "string",
+      "defaultValue": "75"
+    },
+    "ContractApproverTopicDeadletterThreshhold": {
+      "type": "string",
+      "defaultValue": "0"
+    },
+    "ContractApproverTopicActiveMessagesThreshhold": {
+      "type": "string",
+      "defaultValue": "1000"
+    },
+    "FcsApiBaseAddress": {
+      "type": "string"
+    },
+    "FcsApiContractApprovalEndpoint": {
+      "type": "string"
+    },
+    "FcsApiAzureAdTenant": {
+      "type": "string"
+    },
+    "FcsApiAzureAdClientId": {
+      "type": "string"
+    },
+    "FcsApiAzureAdClientSecret": {
+      "type": "securestring"
+    },
+    "FcsApiAzureAdAppUri": {
+      "type": "string"
+    },
+    "AuditApiBaseAddress": {
+      "type": "string"
+    },
+    "AuditApiAzureAdTenant": {
+      "type": "string"
+    },
+    "AuditApiAzureAdClientId": {
+      "type": "string"
+    },
+    "AuditApiAzureAdClientSecret": {
+      "type": "securestring"
+    },
+    "AuditApiAzureAdAppUri": {
+      "type": "string"
+    },
+    "HttpOptionsRetryCount": {
+      "type": "string",
+      "defaultValue": "3"
+    },
+    "HttpOptionsBackOffPower": {
+      "type": "string",
+      "defaultValue": "2"
+    },
+    "HttpOptionsCircuitBreakerToleranceCount": {
+      "type": "string",
+      "defaultValue": "5"
+    },
+    "HttpOptionsCircuitBreakerDuration": {
+      "type": "string",
+      "defaultValue": "0.00:00:15"
     }
   },
   "variables": {
     "deploymentUrlBase": "https://raw.githubusercontent.com/SkillsFundingAgency/funding-platform-building-blocks/master/templates/",
     "resourceNamePrefix": "[toLower(concat('pds-', parameters('resourceEnvironmentName'),'-', parameters('serviceName')))]",
-    "appServiceName": "[concat(variables('resourceNamePrefix'), 'api-as')]",
-    "appServicePlanName": "[concat(variables('resourceNamePrefix'), 'api-asp')]"
+    "functionAppName": "[concat(variables('resourceNamePrefix'), 'wkr-fa')]",
+    "contractNotificationTopicName": "[concat('contract-notification-topic-', parameters('resourceEnvironmentName'))]",
+    "contractApproverSubscriptionName": "[concat('contract-approver-subscription-', parameters('resourceEnvironmentName'))]",
+    "appServicePlanName": "[concat(variables('resourceNamePrefix'), 'wkr-asp')]",
+    "EnvironmentToEnableAlertsUpon": ["demo", "oat", "release"],
+    "EnableAlertsAndMetrics": "[contains(variables('EnvironmentToEnableAlertsUpon'), toLower(parameters('resourceEnvironmentName')))]",
+    "AppServicePlanMetricsToAlertUpon": [
+      {
+        "MetricName": "CpuPercentage",
+        "Operator": "GreaterThanOrEqual",
+        "Threshold": "[parameters('CPUPercentageAlertThreshhold')]",
+        "TimeWindow": "PT5M",
+        "Aggregation": "Average"
+      },
+      {
+        "MetricName": "MemoryPercentage",
+        "Operator": "GreaterThanOrEqual",
+        "Threshold": "[parameters('MemoryPercentageAlertThreshhold')]",
+        "TimeWindow": "PT5M",
+        "Aggregation": "Average"
+      }
+    ],
+    "ServiceBusTopicMetricsToAlertUpon": [
+      {
+        "MetricName": "DeadletteredMessages",
+        "TopicName": "[variables('contractNotificationTopicName')]",
+        "Operator": "GreaterThan",
+        "Threshold": "[parameters('ContractApproverTopicDeadletterThreshhold')]",
+        "TimeWindow": "PT5M",
+        "Aggregation": "Average"
+      },
+      {
+        "MetricName": "ActiveMessages",
+        "TopicName": "[variables('contractNotificationTopicName')]",
+        "Operator": "GreaterThan",
+        "Threshold": "[parameters('ContractApproverTopicActiveMessagesThreshhold')]",
+        "TimeWindow": "PT5M",
+        "Aggregation": "Average"
+      }
+    ]
   },
   "resources": [
     {
@@ -64,17 +178,68 @@
     },
     {
       "apiVersion": "2017-05-10",
-      "name": "app-service",
+      "name": "contract-approver-service-bus-topic",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('sharedResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusNamespaceName": {
+            "value": "[parameters('sharedServiceBusName')]"
+          },
+          "serviceBusTopicName": {
+            "value": "[variables('contractNotificationTopicName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "contract-approver-service-bus-subscription",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('sharedResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic-subscription.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusNamespaceName": {
+            "value": "[parameters('sharedServiceBusName')]"
+          },
+          "serviceBusTopicName": {
+            "value": "[variables('contractNotificationTopicName')]"
+          },
+          "serviceBusTopicSubscriptionName": {
+            "value": "[variables('contractApproverSubscriptionName')]"
+          },
+          "subscriptionSqlFilter": {
+            "value": "Status = 'ApprovedWaitingConfirmation'"
+          }
+        }
+      },
+      "dependsOn": [
+        "contract-approver-service-bus-topic"
+      ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "function-app",
       "type": "Microsoft.Resources/deployments",
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[concat(variables('deploymentUrlBase'),'app-service.json')]",
+          "uri": "[concat(variables('deploymentUrlBase'),'function-app.json')]",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
-          "appServiceName": {
-            "value": "[variables('appServiceName')]"
+          "functionAppName": {
+            "value": "[variables('functionAppName')]"
           },
           "appServicePlanName": {
             "value": "[variables('appServicePlanName')]"
@@ -82,11 +247,36 @@
           "appServicePlanResourceGroup": {
             "value": "[resourceGroup().name]"
           },
-          "appServiceAppSettings": {
+          "functionAppConnectionStrings": {
             "value": [
               {
-                "name": "ASPNETCORE_ENVIRONMENT",
-                "value": "[parameters('ASPNETCORE_ENVIRONMENT')]"
+                "name": "sb-connection-string",
+                "connectionString": "[listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString]",
+                "type": "Custom"
+              }
+            ]
+          },
+          "functionAppAppSettings": {
+            "value": [
+              {
+                "name": "Environment",
+                "value": "[parameters('resourceEnvironmentName')]"
+              },
+              {
+                "name": "AzureWebJobsStorage",
+                "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('sharedStorageAccountName'),';AccountKey=',listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.Storage/storageAccounts',parameters('sharedStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value, ';EndpointSuffix=core.windows.net')]"
+              },
+              {
+                "name": "FUNCTIONS_EXTENSION_VERSION",
+                "value": "~3"
+              },
+              {
+                "name": "FUNCTIONS_WORKER_RUNTIME",
+                "value": "dotnet"
+              },
+              {
+                "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                "value": "[reference(resourceId(parameters('sharedResourceGroupName'), 'microsoft.insights/components', parameters('sharedAppInsightsName')),'2015-05-01').InstrumentationKey]"
               },
               {
                 "name": "PdsApplicationInsights:InstrumentationKey",
@@ -97,21 +287,81 @@
                 "value": "[parameters('resourceEnvironmentName')]"
               },
               {
-                "name": "Logging:ApplicationInsights:Loglevel:Default",
-                "value": "Information"
+                "name": "Pds.Contracts.Notifications.Topic",
+                "value": "[variables('contractNotificationTopicName')]"
               },
               {
-                "name": "Logging:ApplicationInsights:Loglevel:Microsoft",
-                "value": "Error"
+                "name": "Pds.Contracts.Approval.Subscription",
+                "value": "[variables('contractApproverSubscriptionName')]"
               },
               {
-                "name": "Logging:LogLevel:Default",
-                "value": "Information"
+                "name": "FcsApiClientConfiguration:ApiBaseAddress",
+                "value": "[parameters('FcsApiBaseAddress')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:Authority", 
+                "value": "https://login.microsoftonline.com/"
+              },
+              {
+                "name": "FcsApiClientConfiguration:TenantId",
+                "value": "[parameters('FcsApiAzureAdTenant')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:ClientId",
+                "value": "[parameters('FcsApiAzureAdClientId')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:ClientSecret",
+                "value": "[parameters('FcsApiAzureAdClientSecret')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:AppUri",
+                "value": "[parameters('FcsApiAzureAdAppUri')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ApiBaseAddress",
+                "value": "[parameters('AuditApiBaseAddress')]"
+              },
+              {
+                "name": "FcsApiClientConfiguration:ApiContractApproverEndpoint",
+                "value": "[parameters('FcsApiContractApprovalEndpoint')]"
+              },
+              {
+                "name": "AuditApiConfiguration:Authority",
+                "value": "https://login.microsoftonline.com/"
+              },
+              {
+                "name": "AuditApiConfiguration:TenantId",
+                "value": "[parameters('AuditApiAzureAdTenant')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ClientId",
+                "value": "[parameters('AuditApiAzureAdClientId')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ClientSecret",
+                "value": "[parameters('AuditApiAzureAdClientSecret')]"
+              },
+              {
+                "name": "AuditApiConfiguration:AppUri",
+                "value": "[parameters('AuditApiAzureAdAppUri')]"
+              },
+              {
+                "name": "HttpPolicyOptions:HttpRetryCount",
+                "value": "[parameters('HttpOptionsRetryCount')]"
+              },
+              {
+                "name": "HttpPolicyOptions:HttpRetryBackoffPower",
+                "value": "[parameters('HttpOptionsBackOffPower')]"
+              },
+              {
+                "name": "HttpPolicyOptions:CircuitBreakerToleranceCount",
+                "value": "[parameters('HttpOptionsCircuitBreakerToleranceCount')]"
+              },
+              {
+                "name": "HttpPolicyOptions:CircuitBreakerDurationOfBreak",
+                "value": "[parameters('HttpOptionsCircuitBreakerDuration')]"
               }
-            ]
-          },
-          "appServiceConnectionStrings": {
-            "value": [
             ]
           }
         }
@@ -119,12 +369,172 @@
       "dependsOn": [
         "app-service-plan"
       ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "[concat(variables('AppServicePlanName'), '-metric-', tolower(variables('AppServicePlanMetricsToAlertUpon')[copyIndex()].MetricName))]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'), 'alert-rules.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "enabled": {
+            "value": "[variables('EnableAlertsAndMetrics')]"
+          },
+          "alertName": {
+            "value": "[concat(variables('AppServicePlanName'), '-metric-', tolower(variables('AppServicePlanMetricsToAlertUpon')[copyIndex()].MetricName))]"
+          },
+          "alertSeverity": {
+            "value": 3
+          },
+          "metricName": {
+            "value": "[variables('AppServicePlanMetricsToAlertUpon')[copyIndex()].MetricName]"
+          },
+          "operator": {
+            "value": "[variables('AppServicePlanMetricsToAlertUpon')[copyIndex()].Operator]"
+          },
+          "threshold": {
+            "value": "[variables('AppServicePlanMetricsToAlertUpon')[copyIndex()].Threshold]"
+          },
+          "aggregation": {
+            "value": "[variables('AppServicePlanMetricsToAlertUpon')[copyIndex()].Aggregation]"
+          },
+          "windowSize": {
+            "value": "[variables('AppServicePlanMetricsToAlertUpon')[copyIndex()].TimeWindow]"
+          },
+          "evaluationFrequency": {
+            "value": "PT1M"
+          },
+          "actionGroupName": {
+            "value": "[parameters('ActionGroupName')]"
+          },
+          "actionGroupResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "resourceId": {
+            "value": "[resourceId('Microsoft.Web/serverfarms', variables('AppServicePlanName'))]"
+          }
+        }
+      },
+      "copy": {
+        "name": "AppServicePlanMetricCopy",
+        "count": "[length(variables('AppServicePlanMetricsToAlertUpon'))]"
+      },
+      "dependsOn": [
+        "app-service-plan"
+      ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "[concat(parameters('sharedServiceBusName'), '-metric-', tolower(variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].MetricName))]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'), 'alert-rules.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "enabled": {
+            "value": "[variables('EnableAlertsAndMetrics')]"
+          },
+          "alertName": {
+            "value": "[concat(variables('functionAppName'), '-metric-', tolower(variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].MetricName))]"
+          },
+          "alertSeverity": {
+            "value": 3
+          },
+          "metricName": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].MetricName]"
+          },
+          "operator": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].Operator]"
+          },
+          "threshold": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].Threshold]"
+          },
+          "aggregation": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].Aggregation]"
+          },
+          "windowSize": {
+            "value": "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].TimeWindow]"
+          },
+          "evaluationFrequency": {
+            "value": "PT1M"
+          },
+          "dimensions": {
+            "value": [
+              {
+                "name": "EntityName",
+                "operator": "Include",
+                "values": [
+                  "[variables('ServiceBusTopicMetricsToAlertUpon')[copyIndex()].TopicName]"
+                ]
+              }
+            ]
+          },
+          "actionGroupName": {
+            "value": "[parameters('ActionGroupName')]"
+          },
+          "actionGroupResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "resourceId": {
+            "value": "[resourceId(parameters('sharedResourceGroupName'), 'Microsoft.ServiceBus/namespaces', parameters('sharedServiceBusName'))]"
+          }
+        }
+      },
+      "copy": {
+        "name": "ServiceBusMetricCopy",
+        "count": "[length(variables('ServiceBusTopicMetricsToAlertUpon'))]"
+      },
+      "dependsOn": [
+        "contract-approver-service-bus-topic"
+      ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-approver-failed-contracts-approver-func')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'), 'alert-rules-app-insights-query.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "enabled": {
+            "value": "[variables('EnableAlertsAndMetrics')]"
+          },
+          "alertName": {
+            "value": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-approver-failed-contracts-approver-func')]"
+          },
+          "query": {
+            "value": "requests | where name==\"ContractsApproverFunction\" | where success == false"
+          },
+          "actionGroupResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "actionGroupName": {
+            "value": "[parameters('ActionGroupName')]"
+          },
+          "appInsightsResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "appInsightsName":{
+            "value": "[parameters('sharedAppInsightsName')]"
+          }
+        }
+      }
     }
   ],
   "outputs": {
-    "AppServiceName": {
+    "FunctionAppName": {
       "type": "string",
-      "value": "[variables('appServiceName')]"
+      "value": "[variables('functionAppName')]"
     }
   }
 }
