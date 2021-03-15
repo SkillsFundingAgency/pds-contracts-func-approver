@@ -139,7 +139,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
 
 
             var httpBuilder = serviceCollection
-                .AddPolicies<IDummyService>(config, policyRegistry)
+                .AddPollyPolicies<IDummyService>(config, policyRegistry)
                 .AddHttpClient<IDummyService, DummyService, DummyApiClientOptions>(config, policies)
                 .AddHttpMessageHandler(() => httpMessageHandler);
 

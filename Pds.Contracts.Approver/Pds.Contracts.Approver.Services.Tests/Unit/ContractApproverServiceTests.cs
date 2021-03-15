@@ -2,6 +2,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Pds.Audit.Api.Client.Enumerations;
+using Pds.Audit.Api.Client.Interfaces;
 using Pds.Contracts.Approver.Services.Configuration;
 using Pds.Contracts.Approver.Services.Implementations;
 using Pds.Contracts.Approver.Services.Interfaces;
@@ -13,6 +15,7 @@ using RichardSzalay.MockHttp;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using AuditModels = Pds.Audit.Api.Client.Models;
 
 namespace Pds.Contracts.Approver.Services.Tests.Unit
 {
@@ -34,7 +37,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
                 .Respond(HttpStatusCode.OK);
 
             Mock.Get(_auditApi)
-                   .Setup(p => p.CreateAuditAsync(It.IsAny<Audit>()))
+                   .Setup(p => p.AuditAsync(It.IsAny<AuditModels.Audit>()))
                    .Returns(Task.CompletedTask);
 
             Mock.Get(_contractsApproverLogger)
@@ -56,18 +59,22 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
         {
             // Arrange
             var message = GetContractApprovedMessage();
-            int expectedAuditActionType = AuditService.AuditActionType_ContractApprovedMessageSentToFCS;
-            int actualAuditActionType = -1; // Init to invalid value - Will be overriden in mock
+            var expectedAuditActionType = ActionType.ContractApprovedMessageSentToFCS;
+
+            // Init to invalid value - Will be overriden in mock
+            var actualAuditActionType = ActionType.AllocationEmailFailedToSend;
+            int? actualUkprn = null;
 
             _mockHttpMessageHandler
                 .Expect(TestBaseAddress + TestApiEndpoint)
                 .Respond(HttpStatusCode.OK);
 
             Mock.Get(_auditApi)
-                .Setup(p => p.CreateAuditAsync(It.IsAny<Audit>()))
-                .Returns((Audit audit) =>
+                .Setup(p => p.AuditAsync(It.IsAny<AuditModels.Audit>()))
+                .Returns((AuditModels.Audit audit) =>
                     {
                         actualAuditActionType = audit.Action;
+                        actualUkprn = audit.Ukprn;
                         return Task.CompletedTask;
                     })
                 .Verifiable();
@@ -84,6 +91,7 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
             // Assert
             act.Should().NotThrow();
             actualAuditActionType.Should().Be(expectedAuditActionType);
+            actualUkprn.Should().Be(message.Ukprn);
             VerifyAllMocks();
         }
 
@@ -97,8 +105,8 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
                 .Respond(HttpStatusCode.OK);
 
             Mock.Get(_auditApi)
-                .Setup(p => p.CreateAuditAsync(It.IsAny<Audit>()))
-                .Returns((Audit audit) => throw new Exception())
+                .Setup(p => p.AuditAsync(It.IsAny<AuditModels.Audit>()))
+                .Returns((AuditModels.Audit audit) => throw new Exception())
                 .Verifiable();
 
             Mock.Get(_contractsApproverLogger)
@@ -153,7 +161,8 @@ namespace Pds.Contracts.Approver.Services.Tests.Unit
             {
                 ContractNumber = "123",
                 MasterContractNumber = "12",
-                ContractVersionNumber = 1
+                ContractVersionNumber = 1,
+                Ukprn = 12345678
             };
         }
 

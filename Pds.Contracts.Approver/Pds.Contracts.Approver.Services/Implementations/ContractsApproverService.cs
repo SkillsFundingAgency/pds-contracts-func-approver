@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Pds.Audit.Api.Client.Enumerations;
+using Pds.Audit.Api.Client.Interfaces;
+using Pds.Audit.Api.Client.Models;
 using Pds.Contracts.Approver.Services.Configuration;
 using Pds.Contracts.Approver.Services.Interfaces;
 using Pds.Contracts.Approver.Services.Models;
@@ -60,15 +63,16 @@ namespace Pds.Contracts.Approver.Services.Implementations
 
             _logger.LogInformation($"Sending approved contract notification for {message.ContractNumber}.");
 
-            await PostWithAADAuth(_configuration.ApiContractApproverEndpoint, message);
+            await Post(_configuration.ApiContractApproverEndpoint, message);
 
             try
             {
-                await _audit.CreateAuditAsync(new Audit()
+                await _audit.AuditAsync(new Audit.Api.Client.Models.Audit()
                 {
-                    Action = AuditService.AuditActionType_ContractApprovedMessageSentToFCS,
+                    Action = ActionType.ContractApprovedMessageSentToFCS,
                     Severity = 0,
                     User = ContractApproverUser,
+                    Ukprn = message.Ukprn,
                     Message = $"Notified FCS of approved contract [{message.ContractNumber}] Version [{message.ContractVersionNumber}]."
                 });
             }
